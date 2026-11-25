@@ -1,0 +1,86 @@
+name: ios-ipa
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-ipa.yml'
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Rust toolchain (stable + aarch64-apple-ios)
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: stable
+          targets: aarch64-apple-ios
+
+      - name: Cache cargo registry and build
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ios-ipa
+
+      - name: Build horizon-client for aarch64-apple-ios
+        run: cargo build --release --target aarch64-apple-ios -p horizon-game --bin horizon-client
+
+      - name: Assemble Horizon.app and package the .ipa
+        run: |
+          set -euo pipefail
+          STAGE=stage/Payload/Horizon.app
+          mkdir -p "$STAGE"
+          cp target/aarch64-apple-ios/release/horizon-client "$STAGE/Horizon"
+          cat > "$STAGE/Info.plist" <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleDevelopmentRegion</key><string>en</string>
+            <key>CFBundleDisplayName</key><string>Horizon</string>
+            <key>CFBundleExecutable</key><string>Horizon</string>
+            <key>CFBundleIdentifier</key><string>com.tjdm.horizonios</string>
+            <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+            <key>CFBundleName</key><string>Horizon</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>0.1.0</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UIRequiresFullScreen</key><true/>
+            <key>UILaunchScreen</key><dict/>
+            <key>UIStatusBarHidden</key><true/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+              <string>UIInterfaceOrientationLandscapeLeft</string>
+              <string>UIInterfaceOrientationLandscapeRight</string>
+            </array>
+            <key>UIFileSharingEnabled</key><true/>
+            <key>LSSupportsOpeningDocumentsInPlace</key><true/>
+            <key>NSAppTransportSecurity</key>
+            <dict><key>NSAllowsArbitraryLoads</key><true/></dict>
+            <key>UIRequiredDeviceCapabilities</key>
+            <array><string>arm64</string></array>
+          </dict>
+          </plist>
+          EOF
+          codesign --force --sign - "$STAGE"
+          (cd stage && zip -qry ../Horizon.ipa Payload)
+          ls -la Horizon.ipa
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: Horizon-ipa
+          path: Horizon.ipa
+          if-no-files-found: error
