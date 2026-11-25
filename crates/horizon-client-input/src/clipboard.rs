@@ -152,7 +152,7 @@ impl SystemClipboard {
     }
     /// `KeyboardHandler.getClipboard`: empty when there is no text.
     pub fn text(&self) -> String {
-        #[cfg(target_os = "android")]
+        #[cfg(any(target_os = "android", target_os = "ios"))]
         return self.copied().unwrap_or_default();
         #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
         {

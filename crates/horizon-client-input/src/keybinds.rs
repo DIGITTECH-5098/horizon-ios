@@ -391,13 +391,13 @@ pub fn raw_key_code(physical: winit::keyboard::PhysicalKey) -> u32 {
             NativeKeyCode::MacOS(c) | NativeKeyCode::Windows(c) => c.into(),
             NativeKeyCode::Unidentified => 0,
         },
-        #[cfg(not(target_os = "android"))]
+        #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
         PhysicalKey::Code(_) => {
             use winit::platform::scancode::PhysicalKeyExtScancode;
             physical.to_scancode().unwrap_or(0)
         }
-        // Android does not expose winit's platform scancode extension.
-        #[cfg(target_os = "android")]
+        // Android and iOS do not expose winit's platform scancode extension.
+        #[cfg(any(target_os = "android", target_os = "ios"))]
         PhysicalKey::Code(_) => 0,
     }
 }

@@ -638,7 +638,7 @@ impl ApplicationHandler for Game<'_> {
                 PhysicalKey::Code(code) => horizon_client::keybinds::key_name(code),
                 PhysicalKey::Unidentified(_) => None,
             };
-            #[cfg(not(target_os = "android"))]
+            #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
             let layout_key = {
                 use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
                 horizon_client::keybinds::layout_key_name(
@@ -646,7 +646,7 @@ impl ApplicationHandler for Game<'_> {
                     &event.key_without_modifiers(),
                 )
             };
-            #[cfg(target_os = "android")]
+            #[cfg(any(target_os = "android", target_os = "ios"))]
             let layout_key =
                 horizon_client::keybinds::layout_key_name(event.physical_key, &event.logical_key);
             let raw_code = horizon_client::keybinds::raw_key_code(event.physical_key);
