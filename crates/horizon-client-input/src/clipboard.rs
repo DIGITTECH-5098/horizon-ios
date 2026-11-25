@@ -4,7 +4,7 @@
 //! `ChatFormatting.stripFormatting`.
 
 use std::cell::RefCell;
-#[cfg(not(target_os = "android"))]
+#[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
 use std::cell::RefMut;
 use winit::keyboard::{Key, KeyCode, PhysicalKey};
 
@@ -130,7 +130,7 @@ pub trait Clipboard {
 /// It reads and writes through `&self`, as a mod's `ClientHost` reaches it.
 #[derive(Default)]
 pub struct SystemClipboard {
-    #[cfg(not(target_os = "android"))]
+    #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
     system: RefCell<Option<arboard::Clipboard>>,
     /// The text Horizon last copied (`horizon-ctl status`).
     copied: RefCell<Option<String>>,
@@ -142,7 +142,7 @@ impl SystemClipboard {
         self.copied.borrow().clone()
     }
     /// The system clipboard, connected on first use.
-    #[cfg(not(target_os = "android"))]
+    #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
     fn system(&self) -> RefMut<'_, Option<arboard::Clipboard>> {
         let mut system = self.system.borrow_mut();
         if system.is_none() {
@@ -154,7 +154,7 @@ impl SystemClipboard {
     pub fn text(&self) -> String {
         #[cfg(target_os = "android")]
         return self.copied().unwrap_or_default();
-        #[cfg(not(target_os = "android"))]
+        #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
         {
             let mut system = self.system();
             let Some(board) = system.as_mut() else {
@@ -177,7 +177,7 @@ impl SystemClipboard {
             return;
         }
         *self.copied.borrow_mut() = Some(text.to_owned());
-        #[cfg(not(target_os = "android"))]
+        #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
         {
             let mut system = self.system();
             if let Some(board) = system.as_mut()
