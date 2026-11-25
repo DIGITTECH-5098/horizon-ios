@@ -577,7 +577,7 @@ fn native_multi_draw_limit(adapter: &wgpu::Adapter, multi_draw: bool) -> u32 {
     match adapter.get_info().backend {
         _ if !multi_draw => 0,
         wgpu::Backend::Dx12 => u32::MAX,
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(all(not(target_os = "macos"), not(target_os = "ios")))]
         wgpu::Backend::Vulkan => horizon_hdr::vulkan_multi_draw_limit(adapter).unwrap_or(0),
         _ => 0,
     }
